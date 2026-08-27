@@ -1,0 +1,84 @@
+name: Upload iOS
+description: iOSプロジェクトをxcodebuildでarchiveし、TestFlightにアップロードする
+inputs:
+  export_options:
+    description: ExportOptions.plistのパス
+    required: true
+  app_store_connect_key_id:
+    description: App Store Connect APIキーのKey ID
+    required: true
+  app_store_connect_issuer_id:
+    description: App Store Connect APIキーのIssuer ID
+    required: true
+  app_store_connect_private_key:
+    description: App Store Connect APIキーの秘密鍵(p8ファイル)
+    required: true
+  workspace:
+    description: xcworkspaceのパス
+    default: ios/Runner.xcworkspace
+  scheme:
+    description: ビルドするスキーム
+    default: Runner
+  configuration:
+    description: ビルドのconfiguration
+    default: Release
+  archive_path:
+    description: xcarchiveの出力先パス
+    default: build/ios/archive/Runner.xcarchive
+  export_path:
+    description: exportの出力先パス
+    default: build/ios/ipa
+  extra_args:
+    description: xcodebuild archiveに追加する引数
+    default: ''
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        set -o pipefail
+
+        KEYCHAIN_PATH="$RUNNER_TEMP/deploy.keychain-db"
+        KEYCHAIN_PASSWORD="$(openssl rand -hex 16)"
+        security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+        security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+        security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+        security list-keychains -d user -s "$KEYCHAIN_PATH" login.keychain-db
+        security default-keychain -s "$KEYCHAIN_PATH"
+
+        AUTH_KEY_DIR="$RUNNER_TEMP/app_store_connect_private_keys"
+        mkdir -p "$AUTH_KEY_DIR"
+        AUTH_KEY_PATH="$AUTH_KEY_DIR/AuthKey_${APP_STORE_CONNECT_KEY_ID}.p8"
+        printf '%s\n' "$APP_STORE_CONNECT_PRIVATE_KEY" > "$AUTH_KEY_PATH"
+
+        xcodebuild archive \
+          -workspace "$WORKSPACE" \
+          -scheme "$SCHEME" \
+          -configuration "$CONFIGURATION" \
+          -destination 'generic/platform=iOS' \
+          -archivePath "$ARCHIVE_PATH" \
+          -allowProvisioningUpdates \
+          -authenticationKeyPath "$AUTH_KEY_PATH" \
+          -authenticationKeyID "$APP_STORE_CONNECT_KEY_ID" \
+          -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID" \
+          $EXTRA_ARGS
+
+        xcodebuild -exportArchive \
+          -archivePath "$ARCHIVE_PATH" \
+          -exportOptionsPlist "$EXPORT_OPTIONS" \
+          -exportPath "$EXPORT_PATH" \
+          -allowProvisioningUpdates \
+          -authenticationKeyPath "$AUTH_KEY_PATH" \
+          -authenticationKeyID "$APP_STORE_CONNECT_KEY_ID" \
+          -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID"
+      env:
+        APP_STORE_CONNECT_KEY_ID: ${{ inputs.app_store_connect_key_id }}
+        APP_STORE_CONNECT_ISSUER_ID: ${{ inputs.app_store_connect_issuer_id }}
+        APP_STORE_CONNECT_PRIVATE_KEY: ${{ inputs.app_store_connect_private_key }}
+        WORKSPACE: ${{ inputs.workspace }}
+        SCHEME: ${{ inputs.scheme }}
+        CONFIGURATION: ${{ inputs.configuration }}
+        ARCHIVE_PATH: ${{ inputs.archive_path }}
+        EXPORT_PATH: ${{ inputs.export_path }}
+        EXPORT_OPTIONS: ${{ inputs.export_options }}
+        EXTRA_ARGS: ${{ inputs.extra_args }}

@@ -1,0 +1,42 @@
+name: Derive build number
+description: App Store ConnectとGoogle Playの全対象アプリを照会し、最大ビルド番号+1を返す
+inputs:
+  android_apps:
+    description: Androidのpackage nameのJSON配列
+    default: '[]'
+  ios_apps:
+    description: iOSのbundle idのJSON配列
+    default: '[]'
+  google_play_service_account_json:
+    description: Google PlayサービスアカウントのJSON
+    default: ''
+  app_store_connect_key_id:
+    description: App Store Connect APIキーのKey ID
+    default: ''
+  app_store_connect_issuer_id:
+    description: App Store Connect APIキーのIssuer ID
+    default: ''
+  app_store_connect_private_key:
+    description: App Store Connect APIキーの秘密鍵(p8ファイル)
+    default: ''
+
+outputs:
+  max_build_number:
+    description: 全対象アプリの現在の最大ビルド番号
+    value: ${{ steps.resolve.outputs.max_build_number }}
+  next_build_number:
+    description: 全対象アプリの最大ビルド番号+1
+    value: ${{ steps.resolve.outputs.next_build_number }}
+runs:
+  using: composite
+  steps:
+    - id: resolve
+      shell: bash
+      run: node "$GITHUB_ACTION_PATH/main.mjs"
+      env:
+        ANDROID_APPS: ${{ inputs.android_apps }}
+        IOS_APPS: ${{ inputs.ios_apps }}
+        GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ inputs.google_play_service_account_json }}
+        APP_STORE_CONNECT_KEY_ID: ${{ inputs.app_store_connect_key_id }}
+        APP_STORE_CONNECT_ISSUER_ID: ${{ inputs.app_store_connect_issuer_id }}
+        APP_STORE_CONNECT_PRIVATE_KEY: ${{ inputs.app_store_connect_private_key }}

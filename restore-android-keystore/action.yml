@@ -1,0 +1,41 @@
+name: Restore Android keystore
+description: Secretsからkeystoreとkey.propertiesを復元する
+inputs:
+  keystore_base64:
+    description: keystoreファイルのbase64
+    required: true
+  store_password:
+    description: keystoreのパスワード
+    required: true
+  key_password:
+    description: 鍵のパスワード
+    required: true
+  key_alias:
+    description: 鍵のalias
+    required: true
+  keystore_path:
+    description: keystoreの復元先パス
+    default: android/app/release.jks
+  properties_path:
+    description: key.propertiesの出力先パス
+    default: android/key.properties
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: |
+        mkdir -p "$(dirname "$KEYSTORE_PATH")"
+        printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_PATH"
+        {
+          echo "storeFile=$(cd "$(dirname "$KEYSTORE_PATH")" && pwd)/$(basename "$KEYSTORE_PATH")"
+          echo "storePassword=$STORE_PASSWORD"
+          echo "keyAlias=$KEY_ALIAS"
+          echo "keyPassword=$KEY_PASSWORD"
+        } > "$PROPERTIES_PATH"
+      env:
+        KEYSTORE_BASE64: ${{ inputs.keystore_base64 }}
+        STORE_PASSWORD: ${{ inputs.store_password }}
+        KEY_PASSWORD: ${{ inputs.key_password }}
+        KEY_ALIAS: ${{ inputs.key_alias }}
+        KEYSTORE_PATH: ${{ inputs.keystore_path }}
+        PROPERTIES_PATH: ${{ inputs.properties_path }}

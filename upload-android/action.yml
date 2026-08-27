@@ -1,0 +1,28 @@
+name: Upload Android
+description: AABをGoogle Playにアップロードする
+inputs:
+  aab_path:
+    description: アップロードするAABのパス
+    required: true
+  package_name:
+    description: アプリのpackage name
+    required: true
+  google_play_service_account_json:
+    description: Google PlayサービスアカウントのJSON
+    required: true
+  track:
+    description: アップロード先トラック
+    default: internal
+  status:
+    description: リリースのステータス
+    default: completed
+runs:
+  using: composite
+  steps:
+    - uses: r0adkll/upload-google-play@v1
+      with:
+        serviceAccountJsonPlainText: ${{ inputs.google_play_service_account_json }}
+        packageName: ${{ inputs.package_name }}
+        releaseFiles: ${{ inputs.aab_path }}
+        track: ${{ inputs.track }}
+        status: ${{ inputs.status }}
