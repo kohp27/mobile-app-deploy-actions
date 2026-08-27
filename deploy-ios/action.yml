@@ -1,6 +1,12 @@
-name: Upload iOS
-description: iOSプロジェクトをxcodebuildでarchiveし、TestFlightにアップロードする
+name: Deploy iOS
+description: FlutterアプリをビルドしてTestFlightにアップロードする
 inputs:
+  build_number:
+    description: ビルド番号
+    required: true
+  build_args:
+    description: flutter build iosに追加する引数
+    default: ''
   export_options:
     description: ExportOptions.plistのパス
     required: true
@@ -34,6 +40,37 @@ inputs:
 runs:
   using: composite
   steps:
+    - shell: bash
+      run: bash "$GITHUB_ACTION_PATH/../shared/require_env.sh" BUILD_NUMBER EXPORT_OPTIONS APP_STORE_CONNECT_KEY_ID APP_STORE_CONNECT_ISSUER_ID APP_STORE_CONNECT_PRIVATE_KEY
+      env:
+        BUILD_NUMBER: ${{ inputs.build_number }}
+        EXPORT_OPTIONS: ${{ inputs.export_options }}
+        APP_STORE_CONNECT_KEY_ID: ${{ inputs.app_store_connect_key_id }}
+        APP_STORE_CONNECT_ISSUER_ID: ${{ inputs.app_store_connect_issuer_id }}
+        APP_STORE_CONNECT_PRIVATE_KEY: ${{ inputs.app_store_connect_private_key }}
+    - uses: actions/cache@v6
+      with:
+        path: ~/.pub-cache
+        key: ${{ runner.os }}-pub-${{ hashFiles('pubspec.lock') }}
+        restore-keys: ${{ runner.os }}-pub-
+    - if: ${{ hashFiles('ios/Podfile.lock') != '' }}
+      uses: actions/cache@v6
+      with:
+        path: |
+          ios/Pods
+          ~/Library/Caches/CocoaPods
+        key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
+        restore-keys: ${{ runner.os }}-pods-
+    - shell: bash
+      run: flutter build ios --config-only --build-number "$BUILD_NUMBER" $BUILD_ARGS
+      env:
+        BUILD_NUMBER: ${{ inputs.build_number }}
+        BUILD_ARGS: ${{ inputs.build_args }}
+    - shell: bash
+      run: |
+        if [ -f ios/Podfile ]; then
+          pod install --project-directory=ios
+        fi
     - shell: bash
       run: bash "$GITHUB_ACTION_PATH/../shared/upload_ios.sh"
       env:

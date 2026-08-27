@@ -1,0 +1,93 @@
+name: Deploy Android
+description: FlutterアプリをビルドしてGoogle Playにアップロードする
+inputs:
+  build_number:
+    description: ビルド番号
+    required: true
+  build_args:
+    description: flutter build appbundle に追加する引数
+    default: ''
+  package_name:
+    description: アプリのpackage name
+    required: true
+  google_play_service_account_json:
+    description: Google PlayサービスアカウントのJSON
+    required: true
+  track:
+    description: アップロード先トラック
+    default: internal
+  status:
+    description: リリースのステータス
+    default: completed
+  aab_path:
+    description: アップロードするAABのパス
+    default: build/app/outputs/bundle/release/app-release.aab
+  setup_java:
+    description: JDKのセットアップを行うか
+    default: 'true'
+  java_version:
+    description: セットアップするJDKのバージョン
+    default: '21'
+  java_distribution:
+    description: セットアップするJDKのディストリビューション
+    default: temurin
+  keystore_base64:
+    description: keystoreファイルのbase64
+    default: ''
+  store_password:
+    description: keystoreのパスワード
+    default: ''
+  key_password:
+    description: 鍵のパスワード
+    default: ''
+  key_alias:
+    description: 鍵のalias
+    default: ''
+  keystore_path:
+    description: keystoreの復元先パス
+    default: android/app/release.jks
+  properties_path:
+    description: key.propertiesの出力先パス
+    default: android/key.properties
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      run: bash "$GITHUB_ACTION_PATH/../shared/require_env.sh" BUILD_NUMBER PACKAGE_NAME GOOGLE_PLAY_SERVICE_ACCOUNT_JSON
+      env:
+        BUILD_NUMBER: ${{ inputs.build_number }}
+        PACKAGE_NAME: ${{ inputs.package_name }}
+        GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ inputs.google_play_service_account_json }}
+    - if: ${{ inputs.setup_java == 'true' }}
+      uses: actions/setup-java@v6
+      with:
+        distribution: ${{ inputs.java_distribution }}
+        java-version: ${{ inputs.java_version }}
+        cache: gradle
+    - uses: actions/cache@v6
+      with:
+        path: ~/.pub-cache
+        key: ${{ runner.os }}-pub-${{ hashFiles('pubspec.lock') }}
+        restore-keys: ${{ runner.os }}-pub-
+    - if: ${{ inputs.keystore_base64 != '' }}
+      shell: bash
+      run: bash "$GITHUB_ACTION_PATH/../shared/restore_android_keystore.sh"
+      env:
+        KEYSTORE_BASE64: ${{ inputs.keystore_base64 }}
+        STORE_PASSWORD: ${{ inputs.store_password }}
+        KEY_PASSWORD: ${{ inputs.key_password }}
+        KEY_ALIAS: ${{ inputs.key_alias }}
+        KEYSTORE_PATH: ${{ inputs.keystore_path }}
+        PROPERTIES_PATH: ${{ inputs.properties_path }}
+    - shell: bash
+      run: flutter build appbundle --build-number "$BUILD_NUMBER" $BUILD_ARGS
+      env:
+        BUILD_NUMBER: ${{ inputs.build_number }}
+        BUILD_ARGS: ${{ inputs.build_args }}
+    - uses: r0adkll/upload-google-play@v1
+      with:
+        serviceAccountJsonPlainText: ${{ inputs.google_play_service_account_json }}
+        packageName: ${{ inputs.package_name }}
+        releaseFiles: ${{ inputs.aab_path }}
+        track: ${{ inputs.track }}
+        status: ${{ inputs.status }}

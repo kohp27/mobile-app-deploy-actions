@@ -4,6 +4,19 @@
 
 ## アクション
 
+### 一括実行
+
+flutter buildからストアへのアップロードまでを一括で実行する。Flutterのセットアップしてから実行すること。
+
+| アクション | 内容 |
+| --- | --- |
+| `deploy-ios` | flutter buildの設定生成 → archive(cloud signing) → TestFlightにアップロード |
+| `deploy-android` | keystore復元(任意) → flutter build → Google Playにアップロード |
+
+### 個別実行
+
+ビルド前に独自の処理が必要な場合は、一括実行の代わりにこれらを組み合わせる。
+
 | アクション | 内容 |
 | --- | --- |
 | `derive-build-number` | 全対象アプリのストアを照会し、最大ビルド番号と+1した値を返す |
