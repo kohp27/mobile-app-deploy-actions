@@ -36,6 +36,7 @@ xcodebuild archive \
   -authenticationKeyPath "$AUTH_KEY_PATH" \
   -authenticationKeyID "$APP_STORE_CONNECT_KEY_ID" \
   -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID" \
+  CODE_SIGNING_ALLOWED=NO \
   ${EXTRA_ARGS:-}
 
 xcodebuild -exportArchive \
