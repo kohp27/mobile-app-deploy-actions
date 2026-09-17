@@ -67,11 +67,6 @@ runs:
         BUILD_NUMBER: ${{ inputs.build_number }}
         BUILD_ARGS: ${{ inputs.build_args }}
     - shell: bash
-      run: |
-        if [ -f ios/Podfile ]; then
-          pod install --project-directory=ios
-        fi
-    - shell: bash
       run: bash "$GITHUB_ACTION_PATH/../shared/upload_ios.sh"
       env:
         APP_STORE_CONNECT_KEY_ID: ${{ inputs.app_store_connect_key_id }}
