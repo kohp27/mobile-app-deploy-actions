@@ -94,6 +94,7 @@ runs:
       env:
         BUILD_NUMBER: ${{ inputs.build_number }}
         BUILD_ARGS: ${{ inputs.build_args }}
+        GRADLE_OPTS: ${{ env.GRADLE_OPTS || '-Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=2g"' }}
     - uses: r0adkll/upload-google-play@v1
       with:
         serviceAccountJsonPlainText: ${{ inputs.google_play_service_account_json }}
