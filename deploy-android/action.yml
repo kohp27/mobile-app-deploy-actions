@@ -58,6 +58,16 @@ runs:
         BUILD_NUMBER: ${{ inputs.build_number }}
         PACKAGE_NAME: ${{ inputs.package_name }}
         GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ inputs.google_play_service_account_json }}
+    - uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6 # v2.0.0
+      with:
+        android: false
+        dotnet: true
+        haskell: true
+        large-packages: false
+        docker-images: false
+        preinstalled-runtimes: false
+        tool-cache: false
+        swap-storage: false
     - if: ${{ inputs.setup_java == 'true' }}
       uses: actions/setup-java@v6
       with:
