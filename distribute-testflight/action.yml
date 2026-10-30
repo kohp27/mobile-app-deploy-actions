@@ -1,5 +1,5 @@
 name: Distribute TestFlight
-description: アップロード済みのビルドの処理完了を待ち、TestFlightのグループに配信する
+description: アップロード済みのビルドの処理完了を待ち、TestFlightの外部グループに配信する
 inputs:
   bundle_id:
     description: アプリのbundle id
@@ -11,7 +11,7 @@ inputs:
     description: 配信するビルドのビルドナンバー
     required: true
   beta_groups:
-    description: 配信先グループ名のJSON配列。外部グループを含む場合はベータ版審査に提出する
+    description: 配信先の外部グループ名のJSON配列
     required: true
   whats_new:
     description: テスト内容。省略時は前回成功した実行からの変更をgitの履歴とPRのタイトルから作成する(checkoutのfetch-depth 0と、actions・pull-requestsのread権限が必要)

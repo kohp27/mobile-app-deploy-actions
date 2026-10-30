@@ -123,12 +123,13 @@ const findBetaGroups = async (appId) => {
   const res = await request('GET', `/betaGroups?${query({
     'filter[app]': appId,
     'filter[name]': betaGroupNames.join(','),
+    'filter[isInternalGroup]': 'false',
     limit: '200',
   })}`)
-  const groups = (res.data ?? []).filter((group) => betaGroupNames.includes(group.attributes.name))
+  const groups = (res.data ?? []).filter((group) => !group.attributes.isInternalGroup && betaGroupNames.includes(group.attributes.name))
 
   const missing = betaGroupNames.filter((name) => !groups.some((group) => group.attributes.name === name))
-  if (missing.length) throw new Error(`beta groups not found: ${missing.join(', ')}`)
+  if (missing.length) throw new Error(`external beta groups not found: ${missing.join(', ')}`)
 
   return groups
 }
@@ -153,19 +154,17 @@ if (autoNotify) {
   console.log('enabled auto notify')
 }
 
-if (groups.some((group) => !group.attributes.isInternalGroup)) {
-  if (detail.attributes.externalBuildState !== 'READY_FOR_BETA_SUBMISSION') {
-    throw new Error(`build is not ready for beta review submission: ${detail.attributes.externalBuildState}`)
-  }
-
-  await request('POST', '/betaAppReviewSubmissions', {
-    data: {
-      type: 'betaAppReviewSubmissions',
-      relationships: { build: { data: { type: 'builds', id: build.id } } },
-    },
-  })
-  console.log('submitted for beta review')
+if (detail.attributes.externalBuildState !== 'READY_FOR_BETA_SUBMISSION') {
+  throw new Error(`build is not ready for beta review submission: ${detail.attributes.externalBuildState}`)
 }
+
+await request('POST', '/betaAppReviewSubmissions', {
+  data: {
+    type: 'betaAppReviewSubmissions',
+    relationships: { build: { data: { type: 'builds', id: build.id } } },
+  },
+})
+console.log('submitted for beta review')
 
 await request('POST', `/builds/${build.id}/relationships/betaGroups`, {
   data: groups.map((group) => ({ type: 'betaGroups', id: group.id })),
