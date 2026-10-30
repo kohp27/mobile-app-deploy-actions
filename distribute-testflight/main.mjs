@@ -154,17 +154,17 @@ if (autoNotify) {
 }
 
 if (groups.some((group) => !group.attributes.isInternalGroup)) {
-  if (detail.attributes.externalBuildState === 'READY_FOR_BETA_SUBMISSION') {
-    await request('POST', '/betaAppReviewSubmissions', {
-      data: {
-        type: 'betaAppReviewSubmissions',
-        relationships: { build: { data: { type: 'builds', id: build.id } } },
-      },
-    })
-    console.log('submitted for beta review')
-  } else {
-    console.log(`skipped beta review submission: ${detail.attributes.externalBuildState}`)
+  if (detail.attributes.externalBuildState !== 'READY_FOR_BETA_SUBMISSION') {
+    throw new Error(`build is not ready for beta review submission: ${detail.attributes.externalBuildState}`)
   }
+
+  await request('POST', '/betaAppReviewSubmissions', {
+    data: {
+      type: 'betaAppReviewSubmissions',
+      relationships: { build: { data: { type: 'builds', id: build.id } } },
+    },
+  })
+  console.log('submitted for beta review')
 }
 
 await request('POST', `/builds/${build.id}/relationships/betaGroups`, {
