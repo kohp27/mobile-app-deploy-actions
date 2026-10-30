@@ -48,13 +48,13 @@ runs:
         APP_STORE_CONNECT_KEY_ID: ${{ inputs.app_store_connect_key_id }}
         APP_STORE_CONNECT_ISSUER_ID: ${{ inputs.app_store_connect_issuer_id }}
         APP_STORE_CONNECT_PRIVATE_KEY: ${{ inputs.app_store_connect_private_key }}
-    - uses: actions/cache@v6
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.pub-cache
         key: ${{ runner.os }}-pub-${{ hashFiles('pubspec.lock') }}
         restore-keys: ${{ runner.os }}-pub-
     - if: ${{ hashFiles('ios/Podfile.lock') != '' }}
-      uses: actions/cache@v6
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: |
           ios/Pods
