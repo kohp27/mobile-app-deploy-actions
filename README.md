@@ -24,6 +24,12 @@ flutter buildからストアへのアップロードまでを一括で実行す�
 | `upload-ios` | xcodebuildでarchive(cloud signing)し、TestFlightにアップロードする |
 | `upload-android` | ビルド済みAABをGoogle Playにアップロードする |
 
+### 配信
+
+| アクション | 内容 |
+| --- | --- |
+| `distribute-testflight` | アップロード済みビルドの処理完了を待ち、テスト内容の設定(省略時は変更履歴から作成)・ベータ版審査への提出(外部グループを含む場合)・グループへの追加を行う |
+
 ## 必要なシークレット
 
 呼び出し側リポジトリのSecretsに以下を登録する(名前は推奨、アクションへは`with:`で渡す)。

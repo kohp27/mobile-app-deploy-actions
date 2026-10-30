@@ -1,0 +1,62 @@
+name: Distribute TestFlight
+description: アップロード済みのビルドの処理完了を待ち、TestFlightのグループに配信する
+inputs:
+  bundle_id:
+    description: アプリのbundle id
+    required: true
+  app_version:
+    description: 配信するビルドのアプリバージョン
+    required: true
+  build_number:
+    description: 配信するビルドのビルドナンバー
+    required: true
+  beta_groups:
+    description: 配信先グループ名のJSON配列。外部グループを含む場合はベータ版審査に提出する
+    required: true
+  whats_new:
+    description: テスト内容。省略時は前回成功した実行からの変更をgitの履歴とPRのタイトルから作成する(checkoutのfetch-depth 0と、actions・pull-requestsのread権限が必要)
+    default: ''
+  github_token:
+    description: テスト内容の作成時に、ワークフローの実行履歴とPRを参照するためのトークン
+    default: ${{ github.token }}
+  whats_new_locale:
+    description: ビルドにローカライズが存在しない場合に、テスト内容を作成するロケール
+    default: ja
+  auto_notify:
+    description: 配信可能になったときにテスターへ自動で通知するか
+    default: 'true'
+  processing_timeout_minutes:
+    description: ビルドの処理完了を待つ時間(分)
+    default: '60'
+  app_store_connect_key_id:
+    description: App Store Connect APIキーのKey ID
+    required: true
+  app_store_connect_issuer_id:
+    description: App Store Connect APIキーのIssuer ID
+    required: true
+  app_store_connect_private_key:
+    description: App Store Connect APIキーの秘密鍵(p8ファイル)
+    required: true
+runs:
+  using: composite
+  steps:
+    - id: notes
+      if: ${{ inputs.whats_new == '' }}
+      shell: bash
+      run: bash "$GITHUB_ACTION_PATH/release_notes.sh"
+      env:
+        GH_TOKEN: ${{ inputs.github_token }}
+    - shell: bash
+      run: node "$GITHUB_ACTION_PATH/main.mjs"
+      env:
+        BUNDLE_ID: ${{ inputs.bundle_id }}
+        APP_VERSION: ${{ inputs.app_version }}
+        BUILD_NUMBER: ${{ inputs.build_number }}
+        BETA_GROUPS: ${{ inputs.beta_groups }}
+        WHATS_NEW: ${{ inputs.whats_new || steps.notes.outputs.text }}
+        WHATS_NEW_LOCALE: ${{ inputs.whats_new_locale }}
+        AUTO_NOTIFY: ${{ inputs.auto_notify }}
+        PROCESSING_TIMEOUT_MINUTES: ${{ inputs.processing_timeout_minutes }}
+        APP_STORE_CONNECT_KEY_ID: ${{ inputs.app_store_connect_key_id }}
+        APP_STORE_CONNECT_ISSUER_ID: ${{ inputs.app_store_connect_issuer_id }}
+        APP_STORE_CONNECT_PRIVATE_KEY: ${{ inputs.app_store_connect_private_key }}
